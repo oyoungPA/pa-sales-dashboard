@@ -3,6 +3,8 @@ main {
 
 h1 {
   text-align: center;
+  font-size: 3rem;
+  font-weight: 700;
 }
 
 .add-promo {
@@ -12,6 +14,10 @@ h1 {
 
 input {
   margin-right: 10px;
+  width: 500px;
+  border-radius: 10px;
+  height: 30px;
+  text-decoration: none;
 }
 
 .promo-row {
@@ -22,14 +28,43 @@ input {
   flex: 0 0 33.333%;
   padding: 10px;
   box-sizing: border-box;
+  border: 5px solid black;
+  margin: 30px;
 }
 
-.promo-item img {
+/* .promo-item img {
   max-width: 100%;
-}
+} */
 
-h2 {
+/* h2 {
   margin: 10px 0px 0px 0px;
+  width: 100vw;
+  display: flex;
+} */
+
+.promo-sub {
+  display: flex;
+  flex-direction: row;
 }
 
+.promo-row {
+  display: flex;
+  flex-direction: column;
+}
 
+.promo-row h2 {
+  width: 100%;
+  margin: 30px 0px 0px 0px;
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.promo-items {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+button {
+  border-radius: 10px;
+}

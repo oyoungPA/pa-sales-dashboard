@@ -7,8 +7,8 @@ import { getAnalytics } from "firebase/analytics";
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "",
-  authAIzaSyB4hciZz_3TA1E8wVxKWQRXZRF3kz8N4HYDomain: "pa-promo-dashboard.firebaseapp.com",
+  apiKey: "AIzaSyB4hciZz_3TA1E8wVxKWQRXZRF3kz8N4HY",
+  authDomain: "pa-promo-dashboard.firebaseapp.com",
   databaseURL: "https://pa-promo-dashboard-default-rtdb.firebaseio.com",
   projectId: "pa-promo-dashboard",
   storageBucket: "pa-promo-dashboard.appspot.com",
