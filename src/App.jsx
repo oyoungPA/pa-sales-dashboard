@@ -5,11 +5,20 @@ import DOMPurify from "dompurify";
 
 export default function App() {
   const [links, setLinks] = useState([]);
-  // const [linkInput, setLinkInput] = useState("");
+  const [linkInput, setLinkInput] = useState("");
+  const [groupedLinks, setGroupedLinks] = useState({});
 
   useEffect(() => {
     readExcel();
   }, []);
+
+  function excelSerialToDate(serial) {
+    const millisecondsPerDay = 24 * 60 * 60 * 1000;
+    const epoch = new Date(1900, 0, 1);
+    const daysSinceEpoch = serial - 1;
+    const offset = daysSinceEpoch * millisecondsPerDay;
+    return new Date(epoch.getTime() + offset);
+  }
 
   const readExcel = () => {
     const url = "/pa-promo-comparison-spreadsheet.xlsx";
@@ -21,20 +30,18 @@ export default function App() {
         const ws = wb.Sheets[wsname];
         const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
 
-        const linkPromises = data.map((link) => {
+        const rowsToProcess = data.slice(1);
+
+        const linkPromises = rowsToProcess.map((link) => {
           return fetch(link[1])
             .then((res) => res.text())
             .then((html) => {
-              // Create a DOMParser to parse the HTML string
               const parser = new DOMParser();
               const doc = parser.parseFromString(html, "text/html");
 
-              // Modify the base URL for relative URLs to work correctly
               const base = doc.createElement("base");
               base.href = link[1];
               doc.head.appendChild(base);
-
-              // Update image src attributes with absolute URLs
               doc.querySelectorAll("img").forEach((img) => {
                 const src = new URL(img.getAttribute("src"), link[1]).href;
                 img.setAttribute("src", src);
@@ -42,21 +49,29 @@ export default function App() {
               });
 
               return {
-                date: link[0],
-                url: link[1],
-                html: DOMPurify.sanitize(doc.documentElement.outerHTML),
+                date: excelSerialToDate(link[0]),
+                link: link[1],
+                html: DOMPurify.sanitize(html),
               };
             })
             .catch((error) => {
               console.error("Error fetching HTML for link:", link[1], error);
-              return { date: link[0], url: link[1], html: "" };
+              return { date: excelSerialToDate(link[0]), link: link[1], html: "" };
             });
-          // fetchHtmlContent(formattedLinks);
         });
 
         Promise.all(linkPromises)
           .then((formattedLinks) => {
             setLinks(formattedLinks);
+            const grouped = formattedLinks.reduce((acc, link) => {
+              const dateKey = link.date.toDateString();
+              if (!acc[dateKey]) {
+                acc[dateKey] = [];
+              }
+              acc[dateKey].push(link);
+              return acc;
+            }, {});
+            setGroupedLinks(grouped);
           })
           .catch((error) => {
             console.error("Error fetching HTML content:", error);
@@ -65,54 +80,62 @@ export default function App() {
       .catch((error) => {
         console.error("Error fetching data:", error);
       });
+    console.log(groupedLinks)
   };
 
-  // const fetchHtmlContent = async (formattedLinks) => {
-  //   const updatedLinks = await Promise.all(
-  //     formattedLinks.map(async (link) => {
-  //       const response = await fetch(link.url);
-  //       const html = await response.text();
-  //       return { ...link, html: html };
-  //     }),
-  //   );
-  //   setLinks(updatedLinks);
-  // };
+  const addLink = async () => {
+    const date = new Date();
+    // const date = excelSerialToDate(rawDate);
+    const response = await fetch("https://cors-anywhere.herokuapp.com/" + linkInput);
+    console.log(response)
+    const html = await response.text();
+    const newLink = { date: date, link: linkInput, html: html };
+    const newData = [...links, newLink];
+    const ws = XLSX.utils.aoa_to_sheet(newData.map((link) => [link.date, link.link]));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    XLSX.writeFile(wb, "pa-promo-comparison-spreadsheet.xlsx");
+    setLinkInput("");
+    setLinks(newData);
+    setGroupedLinks(groupLinksByDate(newData));
+    console.log(hello)
+  };
 
-  // const addLink = async () => {
-  //   const date = new Date().toLocaleDateString();
-  //   const response = await fetch(linkInput);
-  //   const html = await response.text();
-  //   const newLink = { date: date, url: linkInput, html: html };
-  //   const newData = [...links, newLink];
-  //   const ws = XLSX.utils.aoa_to_sheet(
-  //     newData.map((link) => [link.date, link.url]),
-  //   );
-  //   const wb = XLSX.utils.book_new();
-  //   XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-  //   XLSX.writeFile(wb, "emails.xlsx");
-  //   setLinkInput("");
-  //   setLinks(newData);
-  // };
+  const groupLinksByDate = (links) => {
+    return links.reduce((acc, link) => {
+      const dateKey = link.date.toDateString();
+      if (!acc[dateKey]) {
+        acc[dateKey] = [];
+      }
+      acc[dateKey].push(link);
+      return acc;
+    }, {});
+  };
 
   return (
     <main>
       <h1>Competitor Promos</h1>
-      {/* <div>
+      <div className="add-promo">
         <input
           type="text"
           value={linkInput}
           onChange={(e) => setLinkInput(e.target.value)}
         />
-        <button onClick={addLink}>Add</button>
-      </div> */}
-      <ul>
-        {links.map((link, index) => (
-          <li key={index}>
-            <strong>{link.date}:</strong> {link.url}
-            <div dangerouslySetInnerHTML={{ __html: link.html }} />
-          </li>
-        ))}
-      </ul>
+        <button onClick={addLink}>Add Promo</button>
+      </div>
+      {Object.keys(groupedLinks).map((date, index) => (
+        <div key={index} className="promo-group">
+          <h2>{date}</h2>
+          <div className="promo-row">
+            {groupedLinks[date].map((link, linkIndex) => (
+              <div key={linkIndex} className="promo-item">
+                <div dangerouslySetInnerHTML={{ __html: link.html }} />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
     </main>
   );
 }
+

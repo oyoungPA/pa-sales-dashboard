@@ -1,2 +1,35 @@
 main {
 }
+
+h1 {
+  text-align: center;
+}
+
+.add-promo {
+  display: flex;
+  justify-content: center;
+}
+
+input {
+  margin-right: 10px;
+}
+
+.promo-row {
+  display: flex;
+}
+
+.promo-item {
+  flex: 0 0 33.333%;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.promo-item img {
+  max-width: 100%;
+}
+
+h2 {
+  margin: 10px 0px 0px 0px;
+}
+
+
